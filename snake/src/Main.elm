@@ -1,19 +1,43 @@
 module Main exposing (..)
 
+---- IMPORTS ----
+
 import Html exposing (Html, text, div, h1, img)
 import Html.Attributes exposing (src)
 
 
+
 ---- MODEL ----
 
+type alias Coordinate =
+    { x : Int
+    , y : Int
+    }
+
+type alias Snake =
+    { segments : List Coordinate }
+
+type alias GameField =
+    { width : Int
+    , height : Int
+    , snake : Snake
+    }
 
 type alias Model =
-    {}
+    { gameField : GameField
+    , snake : Snake
+    }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( {}, Cmd.none )
+    ( { { 5, 5 }
+      , [ {2, 2}
+        , {2, 3}
+        ]
+      }
+    , Cmd.none
+    )
 
 
 
