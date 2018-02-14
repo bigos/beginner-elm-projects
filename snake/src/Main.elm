@@ -2,39 +2,36 @@ module Main exposing (..)
 
 ---- IMPORTS ----
 
-import Html exposing (Html, text, div, h1, img)
+import Html exposing (Html, text, div, h1, img, p)
 import Html.Attributes exposing (src)
 
 
 
 ---- MODEL ----
 
-type alias Coordinate =
-    { x : Int
-    , y : Int
-    }
+type alias Coordinate = { x : Int
+                        , y : Int
+                        }
 
-type alias Snake =
-    { segments : List Coordinate }
+type alias Model = { width : Int
+                   , height : Int
+                   , snake : List Coordinate
+                   , heading : Heading
+                   }
 
-type alias GameField =
-    { width : Int
-    , height : Int
-    , snake : Snake
-    }
+type alias Snake = List Coordinate
 
-type alias Model =
-    { gameField : GameField
-    , snake : Snake
-    }
-
+type Heading = Up
+             | Right
+             | Down
+             | Left
 
 init : ( Model, Cmd Msg )
 init =
-    ( { { 5, 5 }
-      , [ {2, 2}
-        , {2, 3}
-        ]
+    ( { width = 5
+      , height = 5
+      , snake = [ {x = 2, y = 2} ]
+      , heading = Up
       }
     , Cmd.none
     )
@@ -62,6 +59,7 @@ view model =
     div []
         [ img [ src "/logo.svg" ] []
         , h1 [] [ text "Your Elm App is working!" ]
+        , p [] [ text (toString model)]
         ]
 
 
