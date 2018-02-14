@@ -4,8 +4,8 @@ module Main exposing (..)
 
 import Html exposing (Html, text, div, h1, img, p)
 import Html.Attributes exposing (src)
-
-
+import Time exposing (Time, second)
+import Keyboard exposing (downs)
 
 ---- MODEL ----
 
@@ -13,13 +13,15 @@ type alias Coordinate = { x : Int
                         , y : Int
                         }
 
-type alias Model = { width : Int
+type alias Snake = List Coordinate
+
+type alias Model = { heading : Heading
                    , height : Int
                    , snake : List Coordinate
-                   , heading : Heading
+                   , width : Int
+                   , time : Maybe Time
+                   , lastKey : Maybe Keyboard.KeyCode
                    }
-
-type alias Snake = List Coordinate
 
 type Heading = Up
              | Right
@@ -28,27 +30,38 @@ type Heading = Up
 
 init : ( Model, Cmd Msg )
 init =
-    ( { width = 5
+    ( { heading = Up
       , height = 5
       , snake = [ {x = 2, y = 2} ]
-      , heading = Up
+      , width = 5
+      , time = Nothing
+      , lastKey = Nothing
       }
     , Cmd.none
     )
 
 
+-- zzz1 = { width = 5, height = 5, snake = [{ x = 2, y = 2 }], heading = Up }
 
 ---- UPDATE ----
 
 
 type Msg
     = NoOp
+      | Tick Time
+      | Keypress Keyboard.KeyCode
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    ( model, Cmd.none )
+update   msg    model =
+    case msg of
+        NoOp ->
+            ( model, Cmd.none )
+        Tick newTime ->
+            ( { model | time = Just newTime }, Cmd.none)
 
+        Keypress key ->
+            ( { model | lastKey = Just key }, Cmd.none)
 
 
 ---- VIEW ----
@@ -63,6 +76,15 @@ view model =
         ]
 
 
+-- SUBSCRIPTIONS
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [
+         Time.every second Tick
+        , Keyboard.downs Keypress
+        ]
 
 ---- PROGRAM ----
 
@@ -73,5 +95,5 @@ main =
         { view = view
         , init = init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
