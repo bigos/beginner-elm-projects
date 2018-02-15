@@ -20,13 +20,20 @@ type alias Model = { heading : Heading
                    , snake : List Coordinate
                    , width : Int
                    , time : Maybe Time
-                   , lastKey : Maybe Keyboard.KeyCode
+                   , lastKey : Maybe KeyControl
                    }
 
 type Heading = Up
              | Right
              | Down
              | Left
+
+type KeyControl = KeyPause
+                | KeyLeft
+                | KeyUp
+                | KeyRight
+                | KeyDown
+                | KeyOther
 
 init : ( Model, Cmd Msg )
 init =
@@ -51,7 +58,6 @@ type Msg
       | Tick Time
       | Keypress Keyboard.KeyCode
 
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update   msg    model =
     case msg of
@@ -59,10 +65,32 @@ update   msg    model =
             ( model, Cmd.none )
         Tick newTime ->
             ( { model | time = Just newTime }, Cmd.none)
-
         Keypress key ->
-            ( { model | lastKey = Just key }, Cmd.none)
+            ( { model |
+                    lastKey = Just (translateKeypress key),
+                    heading = (changeHeading model (translateKeypress key))
+              }
+            , Cmd.none)
 
+translateKeypress : Keyboard.KeyCode -> KeyControl
+translateKeypress keycode =
+    case keycode of
+        32 -> KeyPause
+        37 -> KeyLeft
+        38 -> KeyUp
+        39 -> KeyRight
+        40 -> KeyDown
+        _  -> KeyOther
+
+changeHeading : Model -> KeyControl -> Heading
+changeHeading   model    kc =
+    case kc of
+        KeyOther -> model.heading
+        KeyPause -> model.heading
+        KeyLeft  -> Left
+        KeyUp    -> Up
+        KeyRight -> Right
+        KeyDown  -> Down
 
 ---- VIEW ----
 
