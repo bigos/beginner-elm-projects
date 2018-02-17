@@ -3,10 +3,14 @@ module Main exposing (..)
 ---- IMPORTS ----
 
 import Html exposing (Html, text, div, h1, img, p)
-import Html.Attributes exposing (src)
+import Html.Attributes exposing (src, class, style)
 import List exposing (..)
 import Time exposing (Time, second)
 import Keyboard exposing (downs)
+import Svg exposing (svg, rect, path)
+import Svg.Attributes exposing (stroke, width, height, viewBox, x, y, rx, ry
+                               , fill, fillRule, strokeWidth, strokeLinecap
+                               , strokeLinejoin, d)
 
 ---- MODEL ----
 
@@ -40,16 +44,15 @@ init : ( Model, Cmd Msg )
 init =
     ( { heading = Up
       , height = 5
-      , snake = [ {x = 2, y = 2} ]
+      , snake = [ {x = 2, y = 2}
+                , {x = 2, y = 3}
+                ]
       , width = 5
       , time = Nothing
       , lastKey = Nothing
       }
     , Cmd.none
     )
-
-
--- zzz1 = { width = 5, height = 5, snake = [{ x = 2, y = 2 }], heading = Up }
 
 ---- UPDATE ----
 
@@ -67,12 +70,14 @@ update   msg    model =
         Tick newTime ->
             ( { model | time = Just newTime }, Cmd.none)
         Keypress key ->
-            ( { model |
-                    lastKey = Just (keyControl key),
-                    heading = (heading model (keyControl key)),
-                    snake   = moveSnake model.snake (heading model (keyControl key))  (keyControl key)
-              }
-            , Cmd.none)
+            let kk = keyControl key
+            in
+                ( { model |
+                        lastKey = Just kk,
+                        heading = (heading model kk),
+                        snake   = moveSnake model.snake (heading model kk) kk
+                  }
+                , Cmd.none)
 
 keyControl : Keyboard.KeyCode -> KeyControl
 keyControl keycode =
@@ -128,6 +133,7 @@ moveSnake   snake              heading    kc =
 
 ---- VIEW ----
 
+gridSize = 20                   --grid size in pixels
 
 view : Model -> Html Msg
 view model =
@@ -135,8 +141,27 @@ view model =
         [ img [ src "/logo.svg" ] []
         , h1 [] [ text "Your Elm App is working!" ]
         , p [] [ text (toString model)]
+        , div [ class "game"
+              , style [("background", "#eeffee")]
+              ] [gameField model]
         ]
 
+gameField : Model -> Html.Html msg
+gameField   model    =
+    svg
+    [ width "520", height "520", viewBox "0 0 120 120" ]
+    [ rect [ x "10", y "10", width "100", height "100", rx "5", ry "5"
+           , fill "red" ] []
+    , rect [ x "5", y "15", width "100", height "100", rx "5", ry "5"
+          , fill "blue" ] []
+    , path [ fill "none", fillRule "evenodd", stroke "#db7373", strokeWidth "5"
+           , strokeLinecap "round", strokeLinejoin "round"
+           , d (buildMcoords model)] []
+    ]
+
+buildMcoords : Model -> String
+buildMcoords model =
+    List.foldl (\v a -> a ++ (toString v.x) ++ "," ++ (toString v.y) ++ " ") "M " model.snake
 
 -- SUBSCRIPTIONS
 
