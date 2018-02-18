@@ -44,11 +44,11 @@ init : ( Model, Cmd Msg )
 init =
     ( { heading = Up
       , height = 25
-      , snake = [ {x = 2, y = 2}
-                , {x = 2, y = 3}
-                , {x = 2, y = 4}
-                , {x = 2, y = 5}
-                , {x = 2, y = 6}
+      , snake = [ {x = 6, y = 7}
+                , {x = 5, y = 7}
+                , {x = 4, y = 7}
+                , {x = 3, y = 7}
+                , {x = 2, y = 7}
                 ]
       , width = 25
       , time = Nothing
@@ -144,16 +144,24 @@ view model =
         [ h1 [] [ text "Your Elm App is working!" ]
         , p [] [ text (toString model)]
         , div [ class "game"
-              , style [("background", "#eeffee")]
               ] [gameField model]
         ]
 
 gameField : Model -> Html.Html msg
 gameField   model    =
     svg
-    [ width "600", height "400", viewBox "0 0 600 400", style [("border", "solid black 1px" )] ]
+    [ width "600", height "400", viewBox "0 0 600 400" ]
     [ rect [ x "0", y "0", width "600", height "400", rx "5", ry "5"
-          , fill "#024" ] []
+
+
+
+
+
+
+
+
+
+           , fill "#042" ] []
     , path [ fill "none", fillRule "evenodd", stroke "#fa4", strokeWidth "22"
            , strokeLinecap "round", strokeLinejoin "round"
            , d (buildMcoords model)] []
