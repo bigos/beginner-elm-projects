@@ -46,6 +46,9 @@ init =
       , height = 5
       , snake = [ {x = 2, y = 2}
                 , {x = 2, y = 3}
+                , {x = 2, y = 4}
+                , {x = 2, y = 5}
+                , {x = 2, y = 6}
                 ]
       , width = 5
       , time = Nothing
@@ -161,7 +164,12 @@ gameField   model    =
 
 buildMcoords : Model -> String
 buildMcoords model =
-    List.foldl (\v a -> a ++ (toString v.x) ++ "," ++ (toString v.y) ++ " ") "M " model.snake
+    List.foldl (\v a -> a ++ (buildOneCoord v)) "M " model.snake
+
+buildOneCoord v =
+    let scale = 5
+    in (toString (v.x*scale)) ++ "," ++ (toString (v.y*scale)) ++ " "
+
 
 -- SUBSCRIPTIONS
 
