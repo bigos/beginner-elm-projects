@@ -21,6 +21,7 @@ type alias Coordinate = { x : Int
 type alias Snake = List Coordinate
 
 type alias Model = { heading : Heading
+                   , scale : Int
                    , height : Int
                    , snake : List Coordinate
                    , width : Int
@@ -47,6 +48,7 @@ type GameField = Play
 init : ( Model, Cmd Msg )
 init =
     ( { heading = Up
+      , scale = 35 -- snake thickness and number of fields
       , height = 400
       , snake = [ {x = 6, y = 7}
                 , {x = 5, y = 7}
@@ -62,13 +64,25 @@ init =
     , Cmd.none
     )
 
-xyInSnake x y model =
+headBitSnake model =
     let
-        vs = map (\c -> c.x == x && c.y == y) (drop 1 model.snake)
+        x = (unjustify (head model.snake)).x
+        y = (unjustify (head model.snake)).y
     in
-        Debug.log (toString (x,y ,vs, model.snake))
-        member True vs
+        member True (map (\c -> c.x == x && c.y == y) (drop 1 model.snake))
 
+headHitWall model =
+    let
+        h = head model.snake
+    in
+        let
+            x = (unjustify h).x
+            y = (unjustify h).y
+        in
+            (x <= 0
+             || y <=0
+             || x >= (model.width//model.scale)
+             || y >= (model.height//model.scale))
 
 stateGamefield  model =
     let
@@ -78,7 +92,7 @@ stateGamefield  model =
             x = (unjustify h).x
             y = (unjustify h).y
         in
-            if ((x <= 0 || y <=0 || x >= 24 || y >= 16) || xyInSnake x y model )
+            if headHitWall model || headBitSnake model
             then Collision
             else Play
 
@@ -169,15 +183,12 @@ moveSnake   snake              heading    kc =
 
 ---- VIEW ----
 
-gridSize = 20                   --grid size in pixels
-
 view : Model -> Html Msg
 view model =
     div []
-        [ h1 [] [ text "Your Elm App is working!" ]
-        , p [] [ text (toString model)]
-        , div [ class "game"
-              ] [gameField model]
+        [ h1  [] [ text "Your Elm App is working!" ]
+        , p   [] [ text (toString model) ]
+        , div [] [ gameField model ]
         ]
 
 gameField : Model -> Html.Html msg
@@ -187,24 +198,27 @@ gameField   model    =
     , height (toString model.height)
     , viewBox ( "0 0 " ++ (toString model.width) ++ " " ++ (toString model.height))
     ]
+-- game rectangle
     [ rect [ x "0", y "0"
            , width (toString model.width)
            , height (toString model.height)
            , rx "5", ry "5", fill (if model.gameField == Play then "#042" else "#f04")
            ] []
-    , path [ fill "none", fillRule "evenodd", stroke "#fa4", strokeWidth "22"
+    -- snake
+    , path [ fill "none", fillRule "evenodd"
+           , stroke "#fa4"
+           , strokeWidth (toString (model.scale-1))
            , strokeLinecap "round", strokeLinejoin "round"
-           , d (buildMcoords model)
+           , d (buildMcoords model) --snake segments
            ] []
     ]
 
 buildMcoords : Model -> String
 buildMcoords model =
-    List.foldl (\v a -> a ++ (buildOneCoord v)) "M " model.snake
+    List.foldl (\v a -> a ++ (buildOneCoord model v)) "M " model.snake
 
-buildOneCoord v =
-    let scale = 25
-    in (toString (v.x*scale)) ++ "," ++ (toString (v.y*scale)) ++ " "
+buildOneCoord model v =
+    (toString (v.x*model.scale)) ++ "," ++ (toString (v.y*model.scale)) ++ " "
 
 
 -- SUBSCRIPTIONS
