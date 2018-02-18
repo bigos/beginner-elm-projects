@@ -43,14 +43,14 @@ type KeyControl = KeyPause
 init : ( Model, Cmd Msg )
 init =
     ( { heading = Up
-      , height = 5
+      , height = 25
       , snake = [ {x = 2, y = 2}
                 , {x = 2, y = 3}
                 , {x = 2, y = 4}
                 , {x = 2, y = 5}
                 , {x = 2, y = 6}
                 ]
-      , width = 5
+      , width = 25
       , time = Nothing
       , lastKey = Nothing
       }
@@ -141,8 +141,7 @@ gridSize = 20                   --grid size in pixels
 view : Model -> Html Msg
 view model =
     div []
-        [ img [ src "/logo.svg" ] []
-        , h1 [] [ text "Your Elm App is working!" ]
+        [ h1 [] [ text "Your Elm App is working!" ]
         , p [] [ text (toString model)]
         , div [ class "game"
               , style [("background", "#eeffee")]
@@ -152,12 +151,10 @@ view model =
 gameField : Model -> Html.Html msg
 gameField   model    =
     svg
-    [ width "520", height "520", viewBox "0 0 120 120" ]
-    [ rect [ x "10", y "10", width "100", height "100", rx "5", ry "5"
-           , fill "red" ] []
-    , rect [ x "5", y "15", width "100", height "100", rx "5", ry "5"
-          , fill "blue" ] []
-    , path [ fill "none", fillRule "evenodd", stroke "#db7373", strokeWidth "5"
+    [ width "600", height "400", viewBox "0 0 600 400", style [("border", "solid black 1px" )] ]
+    [ rect [ x "0", y "0", width "600", height "400", rx "5", ry "5"
+          , fill "#024" ] []
+    , path [ fill "none", fillRule "evenodd", stroke "#fa4", strokeWidth "22"
            , strokeLinecap "round", strokeLinejoin "round"
            , d (buildMcoords model)] []
     ]
@@ -167,7 +164,7 @@ buildMcoords model =
     List.foldl (\v a -> a ++ (buildOneCoord v)) "M " model.snake
 
 buildOneCoord v =
-    let scale = 5
+    let scale = 25
     in (toString (v.x*scale)) ++ "," ++ (toString (v.y*scale)) ++ " "
 
 
