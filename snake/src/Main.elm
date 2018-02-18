@@ -26,6 +26,7 @@ type alias Model = { heading : Heading
                    , width : Int
                    , time : Maybe Time
                    , lastKey : Maybe KeyControl
+                   , gameField : GameField
                    }
 
 type Heading = Up
@@ -40,22 +41,46 @@ type KeyControl = KeyPause
                 | KeyDown
                 | KeyOther
 
+type GameField = Play
+               | Collision
+
 init : ( Model, Cmd Msg )
 init =
     ( { heading = Up
-      , height = 25
+      , height = 400
       , snake = [ {x = 6, y = 7}
                 , {x = 5, y = 7}
                 , {x = 4, y = 7}
                 , {x = 3, y = 7}
                 , {x = 2, y = 7}
                 ]
-      , width = 25
+      , width = 600
       , time = Nothing
       , lastKey = Nothing
+      , gameField = Play
       }
     , Cmd.none
     )
+
+xyInSnake x y model =
+    let
+        vs = map (\c -> c.x == x && c.y == y) (drop 1 model.snake)
+    in
+        Debug.log (toString (x,y ,vs, model.snake))
+        member True vs
+
+
+stateGamefield  model =
+    let
+        h = head model.snake
+    in
+        let
+            x = (unjustify h).x
+            y = (unjustify h).y
+        in
+            if ((x <= 0 || y <=0 || x >= 24 || y >= 16) || xyInSnake x y model )
+            then Collision
+            else Play
 
 ---- UPDATE ----
 
@@ -65,21 +90,29 @@ type Msg
       | Tick Time
       | Keypress Keyboard.KeyCode
 
+cook model =
+    { model |
+      gameField = stateGamefield model
+    }
+
 update : Msg -> Model -> ( Model, Cmd Msg )
-update   msg    model =
-    case msg of
-        NoOp ->
-            ( model, Cmd.none )
-        Tick newTime ->
-            ( { model | time = Just newTime }, Cmd.none)
-        Keypress key ->
-            let kk = keyControl key
-            in
-                ( { model |
+update   msg    rawModel =
+    let
+        model = cook rawModel
+    in
+        case msg of
+            NoOp ->
+                ( model, Cmd.none )
+            Tick newTime ->
+                ( { model | time = Just newTime }, Cmd.none)
+            Keypress key ->
+                let kk = keyControl key
+                in
+                    ( { model |
                         lastKey = Just kk,
                         heading = (heading model kk),
                         snake   = moveSnake model.snake (heading model kk) kk
-                  }
+                      }
                 , Cmd.none)
 
 keyControl : Keyboard.KeyCode -> KeyControl
@@ -150,21 +183,19 @@ view model =
 gameField : Model -> Html.Html msg
 gameField   model    =
     svg
-    [ width "600", height "400", viewBox "0 0 600 400" ]
-    [ rect [ x "0", y "0", width "600", height "400", rx "5", ry "5"
-
-
-
-
-
-
-
-
-
-           , fill "#042" ] []
+    [ width (toString model.width)
+    , height (toString model.height)
+    , viewBox ( "0 0 " ++ (toString model.width) ++ " " ++ (toString model.height))
+    ]
+    [ rect [ x "0", y "0"
+           , width (toString model.width)
+           , height (toString model.height)
+           , rx "5", ry "5", fill (if model.gameField == Play then "#042" else "#f04")
+           ] []
     , path [ fill "none", fillRule "evenodd", stroke "#fa4", strokeWidth "22"
            , strokeLinecap "round", strokeLinejoin "round"
-           , d (buildMcoords model)] []
+           , d (buildMcoords model)
+           ] []
     ]
 
 buildMcoords : Model -> String
