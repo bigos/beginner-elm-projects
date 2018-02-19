@@ -28,6 +28,7 @@ type alias Model = { heading : Heading
                    , time : Maybe Time
                    , lastKey : Maybe KeyControl
                    , gameField : GameField
+                   , growthFactor : Int
                    }
 
 type Heading = Up
@@ -47,8 +48,8 @@ type GameField = Play
 
 init : ( Model, Cmd Msg )
 init =
-    ( { heading = Up
-      , scale = 35 -- snake thickness and number of fields
+    ( { heading = Right
+      , scale = 25 -- snake thickness and number of fields
       , height = 400
       , snake = [ {x = 6, y = 7}
                 , {x = 5, y = 7}
@@ -60,9 +61,18 @@ init =
       , time = Nothing
       , lastKey = Nothing
       , gameField = Play
+      , growthFactor = 5
       }
     , Cmd.none
     )
+
+shrinkInt : Int -> Int
+shrinkInt n =
+    if (n == 0)
+    then n
+    else if (n > 0)
+         then n - 1
+         else n + 1
 
 headBitSnake model =
     let
@@ -106,7 +116,8 @@ type Msg
 
 cook model =
     { model |
-      gameField = stateGamefield model
+      gameField = stateGamefield model,
+      growthFactor = (shrinkInt model.growthFactor)
     }
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -118,16 +129,28 @@ update   msg    rawModel =
             NoOp ->
                 ( model, Cmd.none )
             Tick newTime ->
-                ( { model | time = Just newTime }, Cmd.none)
+                ( { model |
+                        time = Just newTime,
+                        snake   = moveSnake model.snake model.heading  (unjust model.lastKey) model.growthFactor
+                  }
+                , Cmd.none)
             Keypress key ->
                 let kk = keyControl key
                 in
                     ( { model |
                         lastKey = Just kk,
                         heading = (heading model kk),
-                        snake   = moveSnake model.snake (heading model kk) kk
+                        snake   = moveSnake model.snake (heading model kk) kk model.growthFactor
                       }
                 , Cmd.none)
+
+unjust : Maybe KeyControl -> KeyControl
+unjust x =
+    case x of
+        Nothing ->
+            KeyRight
+        Just x ->
+            x
 
 keyControl : Keyboard.KeyCode -> KeyControl
 keyControl keycode =
@@ -160,24 +183,29 @@ unjustify e =
             { x=0, y=0 }        --!!!!!!!!!!!!!!!!!!!!
         Just e ->
             e
+snakeGrower growth snake =
+    case (compare growth 0) of
+        GT -> snake
+        EQ -> butLast snake
+        LT -> butLast (butLast snake)
 
-moveSnake : List Coordinate -> Heading -> KeyControl -> List Coordinate
-moveSnake   snake              heading    kc =
+moveSnake : List Coordinate -> Heading -> KeyControl -> Int -> List Coordinate
+moveSnake   snake              heading    kc            growth =
     case heading of
         Left ->
             { x = (unjustify (head snake)).x - 1
-            , y = (unjustify (head snake)).y } :: butLast snake
+            , y = (unjustify (head snake)).y } :: snakeGrower growth snake
         Up ->
             { x = (unjustify (head snake)).x
-            , y = (unjustify (head snake)).y - 1 } :: butLast snake
+            , y = (unjustify (head snake)).y - 1 } :: snakeGrower growth snake
 
         Right ->
             { x = (unjustify (head snake)).x + 1
-            , y = (unjustify (head snake)).y } :: butLast snake
+            , y = (unjustify (head snake)).y } :: snakeGrower growth snake
 
         Down ->
             { x = (unjustify (head snake)).x
-            , y = (unjustify (head snake)).y + 1 } :: butLast snake
+            , y = (unjustify (head snake)).y + 1 } :: snakeGrower growth snake
 
 
 
