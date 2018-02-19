@@ -3,7 +3,7 @@ module Main exposing (..)
 ---- IMPORTS ----
 
 import Html exposing (Html, text, div, h1, img, p)
-import Html.Attributes exposing (src, class, style)
+-- import Html.Attributes exposing (src, class, style)
 import List exposing (..)
 import Time exposing (Time, second)
 import Keyboard exposing (downs)
@@ -29,6 +29,7 @@ type alias Model = { heading : Heading
                    , lastKey : Maybe KeyControl
                    , gameField : GameField
                    , growthFactor : Int
+                   , tickInterval : Float
                    }
 
 type Heading = Up
@@ -43,8 +44,10 @@ type KeyControl = KeyPause
                 | KeyDown
                 | KeyOther
 
-type GameField = Play
+type GameField = Move
+               | Feeding
                | Collision
+               | Pause
 
 init : ( Model, Cmd Msg )
 init =
@@ -53,15 +56,13 @@ init =
       , height = 400
       , snake = [ {x = 6, y = 7}
                 , {x = 5, y = 7}
-                , {x = 4, y = 7}
-                , {x = 3, y = 7}
-                , {x = 2, y = 7}
                 ]
       , width = 600
       , time = Nothing
       , lastKey = Nothing
-      , gameField = Play
+      , gameField = Move
       , growthFactor = 5
+      , tickInterval = 0.5
       }
     , Cmd.none
     )
@@ -91,20 +92,13 @@ headHitWall model =
         in
             (x <= 0
              || y <=0
-             || x >= (model.width//model.scale)
-             || y >= (model.height//model.scale))
+             || x >= (model.width  // model.scale)
+             || y >= (model.height // model.scale))
 
-stateGamefield  model =
-    let
-        h = head model.snake
-    in
-        let
-            x = (unjustify h).x
-            y = (unjustify h).y
-        in
-            if headHitWall model || headBitSnake model
-            then Collision
-            else Play
+detectCollision model =
+    if headHitWall model || headBitSnake model
+    then Collision
+    else model.gameField
 
 ---- UPDATE ----
 
@@ -116,7 +110,7 @@ type Msg
 
 cook model =
     { model |
-      gameField = stateGamefield model,
+      gameField = detectCollision model,
       growthFactor = (shrinkInt model.growthFactor)
     }
 
@@ -131,7 +125,8 @@ update   msg    rawModel =
             Tick newTime ->
                 ( { model |
                         time = Just newTime,
-                        snake   = moveSnake model.snake model.heading  (unjust model.lastKey) model.growthFactor
+                        gameField = updateGamefield model (unjust model.lastKey),
+                        snake   = moveSnake model model.heading
                   }
                 , Cmd.none)
             Keypress key ->
@@ -140,9 +135,17 @@ update   msg    rawModel =
                     ( { model |
                         lastKey = Just kk,
                         heading = (heading model kk),
-                        snake   = moveSnake model.snake (heading model kk) kk model.growthFactor
+                        gameField = updateGamefield model kk,
+                        snake   = moveSnake model (heading model kk)
                       }
                 , Cmd.none)
+
+updateGamefield model kk =
+    if (model.gameField == Pause)
+    then
+        if (kk /= KeyPause) then Move  else Pause
+    else
+        if (kk == KeyPause) then Pause else model.gameField
 
 unjust : Maybe KeyControl -> KeyControl
 unjust x =
@@ -183,30 +186,40 @@ unjustify e =
             { x=0, y=0 }        --!!!!!!!!!!!!!!!!!!!!
         Just e ->
             e
+
 snakeGrower growth snake =
     case (compare growth 0) of
-        GT -> snake
+        GT -> snake -- do not remove last segment thus making snake grow
         EQ -> butLast snake
         LT -> butLast (butLast snake)
 
-moveSnake : List Coordinate -> Heading -> KeyControl -> Int -> List Coordinate
-moveSnake   snake              heading    kc            growth =
-    case heading of
-        Left ->
-            { x = (unjustify (head snake)).x - 1
-            , y = (unjustify (head snake)).y } :: snakeGrower growth snake
-        Up ->
-            { x = (unjustify (head snake)).x
-            , y = (unjustify (head snake)).y - 1 } :: snakeGrower growth snake
+moveSnake : Model -> Heading -> List Coordinate
+moveSnake   model    heading    =
+    if (model.gameField == Pause || model.gameField == Collision)
+    then
+        model.snake
+    else
+        moveSnake2 model heading
 
-        Right ->
-            { x = (unjustify (head snake)).x + 1
-            , y = (unjustify (head snake)).y } :: snakeGrower growth snake
-
-        Down ->
-            { x = (unjustify (head snake)).x
-            , y = (unjustify (head snake)).y + 1 } :: snakeGrower growth snake
-
+moveSnake2 model heading =
+    let
+        snake = model.snake
+        growth = model.growthFactor
+        uhs = unjustify  (head snake)
+    in
+        case heading of
+            Left ->
+                { x = uhs.x - 1
+                , y = uhs.y } :: snakeGrower growth snake
+            Up ->
+                { x = uhs.x
+                , y = uhs.y - 1 } :: snakeGrower growth snake
+            Right ->
+                { x = uhs.x + 1
+                , y = uhs.y } :: snakeGrower growth snake
+            Down ->
+                { x = uhs.x
+                , y = uhs.y + 1 } :: snakeGrower growth snake
 
 
 ---- VIEW ----
@@ -230,7 +243,7 @@ gameField   model    =
     [ rect [ x "0", y "0"
            , width (toString model.width)
            , height (toString model.height)
-           , rx "5", ry "5", fill (if model.gameField == Play then "#042" else "#f04")
+           , rx "5", ry "5", fill (if model.gameField == Move then "#042" else "#f04")
            ] []
     -- snake
     , path [ fill "none", fillRule "evenodd"
@@ -246,7 +259,7 @@ buildMcoords model =
     List.foldl (\v a -> a ++ (buildOneCoord model v)) "M " model.snake
 
 buildOneCoord model v =
-    (toString (v.x*model.scale)) ++ "," ++ (toString (v.y*model.scale)) ++ " "
+    (toString (v.x * model.scale)) ++ "," ++ (toString (v.y * model.scale)) ++ " "
 
 
 -- SUBSCRIPTIONS
@@ -255,7 +268,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [
-         Time.every second Tick
+         Time.every (model.tickInterval * second) Tick
         , Keyboard.downs Keypress
         ]
 
