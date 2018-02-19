@@ -212,12 +212,7 @@ updateGamefield model kk =
 
 unjust : Maybe KeyControl -> KeyControl
 unjust x =
-    case x of
-        Nothing ->
-            KeyRight
-
-        Just x ->
-            x
+    Maybe.withDefault KeyRight x
 
 
 keyControl : Keyboard.KeyCode -> KeyControl
@@ -271,13 +266,7 @@ butLast list =
 
 unjustify : Maybe Coordinate -> Coordinate
 unjustify e =
-    case e of
-        Nothing ->
-            { x = 0, y = 0 }
-
-        --!!!!!!!!!!!!!!!!!!!!
-        Just e ->
-            e
+    Maybe.withDefault { x = 0, y = 0 } e
 
 
 snakeGrower growth snake =
