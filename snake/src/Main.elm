@@ -56,6 +56,7 @@ type alias Model =
     , gameField : GameField
     , growthFactor : Int
     , tickInterval : Float
+    , debugData : String
     }
 
 
@@ -91,13 +92,14 @@ init =
             [ { x = 6, y = 7 }
             , { x = 5, y = 7 }
             ]
-      , foodItems = [ { x = 5, y = 5 }, { x = 7, y = 9 } ]
+      , foodItems = [ { x = 5, y = 5 }, { x = 7, y = 9 }, { x = 9, y = 12 } ]
       , width = 600
       , time = Nothing
       , lastKey = Nothing
       , gameField = Move
       , growthFactor = 5
       , tickInterval = 0.5
+      , debugData = ""
       }
     , Cmd.none
     )
@@ -129,6 +131,30 @@ gridCoordinates model =
                 (range 0 (gridHeight model - 1))
         )
         (range 0 (gridWidth model - 1))
+
+
+foodUnderHead c model =
+    let
+        x =
+            (unjustify (head model.snake)).x
+
+        y =
+            (unjustify (head model.snake)).y
+    in
+    c.x == x && c.y == y
+
+
+foodEaten model =
+    let
+        x =
+            (unjustify (head model.snake)).x
+
+        y =
+            (unjustify (head model.snake)).y
+    in
+    member
+        True
+        (map (\c -> c.x == x && c.y == y) model.foodItems)
 
 
 headBitSnake model =
@@ -182,10 +208,19 @@ type Msg
 
 
 cook model =
-    { model
-        | gameField = detectCollision model
-        , growthFactor = shrinkInt model.growthFactor
-    }
+    if foodEaten model then
+        { model
+            | gameField = detectCollision model
+            , growthFactor = model.growthFactor + 3
+            , foodItems = filter (\c -> not (foodUnderHead c model)) model.foodItems
+            , debugData = toString ( "** eaten **", head model.snake, model.foodItems )
+        }
+    else
+        { model
+            | gameField = detectCollision model
+            , growthFactor = shrinkInt model.growthFactor
+            , debugData = ""
+        }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -360,16 +395,6 @@ view model =
     div []
         [ h1 [] [ text "Your Elm App is working!" ]
         , p [] [ text (toString model) ]
-        , p []
-            [ text
-                (toString
-                    ( "grid size"
-                    , gridWidth model
-                    , " x "
-                    , gridHeight model
-                    )
-                )
-            ]
         , div [] [ gameField model ]
         ]
 
@@ -399,10 +424,12 @@ gameField model =
             []
          ]
             ++ map
+                --food items
                 (\c ->
                     rect
-                        [ x (nc model c.x)
-                        , y (nc model c.y)
+                        --food item
+                        [ x (nc model (c.x - 1))
+                        , y (nc model (c.y - 1))
                         , width (toString model.scale)
                         , height (toString model.scale)
                         , rx (toString (model.scale // 2))
