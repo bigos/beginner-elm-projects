@@ -107,6 +107,24 @@ shrinkInt n =
         n + 1
 
 
+gridWidth model =
+    model.width // model.scale
+
+
+gridHeight model =
+    model.height // model.scale
+
+
+gridCoordinates model =
+    map
+        (\x ->
+            map
+                (\y -> ( x, y ))
+                (range 0 (gridHeight model - 1))
+        )
+        (range 0 (gridWidth model - 1))
+
+
 headBitSnake model =
     let
         x =
@@ -135,9 +153,9 @@ headHitWall model =
         || y
         <= 0
         || x
-        >= (model.width // model.scale)
+        >= gridWidth model
         || y
-        >= (model.height // model.scale)
+        >= gridHeight model
 
 
 detectCollision model =
@@ -336,6 +354,16 @@ view model =
     div []
         [ h1 [] [ text "Your Elm App is working!" ]
         , p [] [ text (toString model) ]
+        , p []
+            [ text
+                (toString
+                    ( "grid size"
+                    , gridWidth model
+                    , " x "
+                    , gridHeight model
+                    )
+                )
+            ]
         , div [] [ gameField model ]
         ]
 
@@ -361,6 +389,27 @@ gameField model =
                  else
                     "#f04"
                 )
+            ]
+            []
+        , rect
+            -- TODO: finish drawing game targets
+            [ x "0"
+            , y "0"
+            , width (toString model.scale)
+            , height (toString model.scale)
+            , rx "5"
+            , ry "5"
+            , fill "#ffa"
+            ]
+            []
+        , rect
+            [ x (toString (1 * model.scale))
+            , y (toString (1 * model.scale))
+            , width (toString model.scale)
+            , height (toString model.scale)
+            , rx "5"
+            , ry "5"
+            , fill "#ffa"
             ]
             []
 
