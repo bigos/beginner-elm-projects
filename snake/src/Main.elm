@@ -36,6 +36,10 @@ type alias Coordinate =
     }
 
 
+type alias FoodItems =
+    List Coordinate
+
+
 type alias Snake =
     List Coordinate
 
@@ -45,6 +49,7 @@ type alias Model =
     , scale : Int
     , height : Int
     , snake : List Coordinate
+    , foodItems : FoodItems
     , width : Int
     , time : Maybe Time
     , lastKey : Maybe KeyControl
@@ -86,6 +91,7 @@ init =
             [ { x = 6, y = 7 }
             , { x = 5, y = 7 }
             ]
+      , foodItems = [ { x = 5, y = 5 }, { x = 7, y = 9 } ]
       , width = 600
       , time = Nothing
       , lastKey = Nothing
@@ -375,8 +381,8 @@ gameField model =
         , height (toString model.height)
         , viewBox ("0 0 " ++ toString model.width ++ " " ++ toString model.height)
         ]
-        -- game rectangle
-        [ rect
+        ([ rect
+            -- game rectangle
             [ x "0"
             , y "0"
             , width (toString model.width)
@@ -391,40 +397,38 @@ gameField model =
                 )
             ]
             []
-        , rect
-            -- TODO: finish drawing game targets
-            [ x "0"
-            , y "0"
-            , width (toString model.scale)
-            , height (toString model.scale)
-            , rx "5"
-            , ry "5"
-            , fill "#ffa"
-            ]
-            []
-        , rect
-            [ x (toString (1 * model.scale))
-            , y (toString (1 * model.scale))
-            , width (toString model.scale)
-            , height (toString model.scale)
-            , rx "5"
-            , ry "5"
-            , fill "#ffa"
-            ]
-            []
+         ]
+            ++ map
+                (\c ->
+                    rect
+                        [ x (nc model c.x)
+                        , y (nc model c.y)
+                        , width (toString model.scale)
+                        , height (toString model.scale)
+                        , rx (toString (model.scale // 2))
+                        , ry (toString (model.scale // 2))
+                        , fill "#ffa"
+                        ]
+                        []
+                )
+                model.foodItems
+            ++ [ path
+                    -- snake
+                    [ fill "none"
+                    , fillRule "evenodd"
+                    , stroke "#fa4"
+                    , strokeWidth (toString (model.scale - 1))
+                    , strokeLinecap "round"
+                    , strokeLinejoin "round"
+                    , d (buildMcoords model) --snake segments
+                    ]
+                    []
+               ]
+        )
 
-        -- snake
-        , path
-            [ fill "none"
-            , fillRule "evenodd"
-            , stroke "#fa4"
-            , strokeWidth (toString (model.scale - 1))
-            , strokeLinecap "round"
-            , strokeLinejoin "round"
-            , d (buildMcoords model) --snake segments
-            ]
-            []
-        ]
+
+nc model i =
+    toString (i * model.scale + model.scale // 2)
 
 
 buildMcoords : Model -> String
