@@ -50,6 +50,7 @@ type alias Model =
     , height : Int
     , snake : List Coordinate
     , foodItems : FoodItems
+    , eaten : Int
     , width : Int
     , time : Maybe Time
     , lastKey : Maybe KeyControl
@@ -93,6 +94,7 @@ init =
             , { x = 5, y = 7 }
             ]
       , foodItems = [ { x = 5, y = 5 }, { x = 7, y = 9 }, { x = 9, y = 12 } ]
+      , eaten = 0
       , width = 600
       , time = Nothing
       , lastKey = Nothing
@@ -214,6 +216,7 @@ cook model =
             , growthFactor = model.growthFactor + 3
             , foodItems = filter (\c -> not (foodUnderHead c model)) model.foodItems
             , debugData = toString ( "** eaten **", head model.snake, model.foodItems )
+            , eaten = model.eaten + 1
         }
     else
         { model
@@ -393,9 +396,24 @@ moveSnake2 model heading =
 view : Model -> Html Msg
 view model =
     div []
-        [ h1 [] [ text "Your Elm App is working!" ]
-        , p [] [ text (toString model) ]
+        [ h1 [] [ text "Elm beginner's snake" ]
+
+        --, p [] [ text (toString model) ]
+        , p [] [ text "Use arrow keys to control the snake and space bar to pause" ]
+        , p [] [ text ("Going " ++ toString model.heading) ]
         , div [] [ gameField model ]
+        , p []
+            [ text ("Eaten " ++ toString model.eaten) ]
+        , p []
+            [ text
+                (if model.gameField == Collision then
+                    "Game Over"
+                 else if model.gameField == Pause then
+                    "Paused, press an arrow key to resume"
+                 else
+                    ""
+                )
+            ]
         ]
 
 
@@ -417,6 +435,8 @@ gameField model =
             , fill
                 (if model.gameField == Move then
                     "#042"
+                 else if model.gameField == Pause then
+                    "#8b8"
                  else
                     "#f04"
                 )
