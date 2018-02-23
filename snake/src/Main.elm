@@ -436,7 +436,7 @@ gameField model =
                 (if model.gameField == Move then
                     "#042"
                  else if model.gameField == Pause then
-                    "#8b8"
+                    "#464"
                  else
                     "#f04"
                 )
@@ -460,7 +460,7 @@ gameField model =
                 )
                 model.foodItems
             ++ [ path
-                    -- snake
+                    -- snake tail
                     [ fill "none"
                     , fillRule "evenodd"
                     , stroke "#fa4"
@@ -468,6 +468,18 @@ gameField model =
                     , strokeLinecap "round"
                     , strokeLinejoin "round"
                     , d (buildMcoords model) --snake segments
+                    ]
+                    []
+               ]
+            ++ [ path
+                    -- snake head
+                    [ fill "none"
+                    , fillRule "evenodd"
+                    , stroke "#fa4"
+                    , strokeWidth (toString (model.scale + 10))
+                    , strokeLinecap "round"
+                    , strokeLinejoin "round"
+                    , d (buildMHead model) --snake segments
                     ]
                     []
                ]
@@ -481,6 +493,10 @@ nc model i =
 buildMcoords : Model -> String
 buildMcoords model =
     List.foldl (\v a -> a ++ buildOneCoord model v) "M " model.snake
+
+
+buildMHead model =
+    List.foldl (\v a -> a ++ buildOneCoord model v) "M " (List.take 2 model.snake)
 
 
 buildOneCoord model v =
