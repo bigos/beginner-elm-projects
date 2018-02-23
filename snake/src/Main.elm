@@ -117,14 +117,19 @@ shrinkInt n =
         n + 1
 
 
+gridWidth : { a | scale : Int, width : Int } -> Int
 gridWidth model =
     model.width // model.scale
 
 
+gridHeight : { a | height : Int, scale : Int } -> Int
 gridHeight model =
     model.height // model.scale
 
 
+gridCoordinates :
+    { a | height : Int, scale : Int, width : Int }
+    -> List (List ( Int, Int ))
 gridCoordinates model =
     map
         (\x ->
@@ -135,6 +140,10 @@ gridCoordinates model =
         (range 0 (gridWidth model - 1))
 
 
+foodUnderHead :
+    { a | x : Int, y : Int }
+    -> { b | snake : List Coordinate }
+    -> Bool
 foodUnderHead c model =
     let
         x =
@@ -146,6 +155,9 @@ foodUnderHead c model =
     c.x == x && c.y == y
 
 
+foodEaten :
+    { b | foodItems : List { a | x : Int, y : Int }, snake : List Coordinate }
+    -> Bool
 foodEaten model =
     let
         x =
@@ -159,6 +171,7 @@ foodEaten model =
         (map (\c -> c.x == x && c.y == y) model.foodItems)
 
 
+headBitSnake : { a | snake : List Coordinate } -> Bool
 headBitSnake model =
     let
         x =
@@ -170,6 +183,9 @@ headBitSnake model =
     member True (map (\c -> c.x == x && c.y == y) (drop 1 model.snake))
 
 
+headHitWall :
+    { a | height : Int, scale : Int, snake : List Coordinate, width : Int }
+    -> Bool
 headHitWall model =
     let
         h =
@@ -192,6 +208,15 @@ headHitWall model =
         >= gridHeight model
 
 
+detectCollision :
+    { a
+        | gameField : GameField
+        , height : Int
+        , scale : Int
+        , snake : List Coordinate
+        , width : Int
+    }
+    -> GameField
 detectCollision model =
     if headHitWall model || headBitSnake model then
         Collision
@@ -239,7 +264,7 @@ update msg rawModel =
         Tick newTime ->
             ( { model
                 | time = Just newTime
-                , gameField = updateGamefield model (unjust model.lastKey)
+                , gameField = updateGamefield False model (unjust model.lastKey)
                 , snake = moveSnake model model.heading
               }
             , Cmd.none
@@ -253,21 +278,28 @@ update msg rawModel =
             ( { model
                 | lastKey = Just kk
                 , heading = heading model kk
-                , gameField = updateGamefield model kk
+                , gameField = updateGamefield True model kk
                 , snake = moveSnake model (heading model kk)
               }
             , Cmd.none
             )
 
 
-updateGamefield model kk =
-    if model.gameField == Pause then
-        if kk /= KeyPause then
-            Move
-        else
-            Pause
-    else if kk == KeyPause then
-        Pause
+updateGamefield keyEvent model kk =
+    if keyEvent then
+        case model.gameField of
+            Pause ->
+                -- any key will resume paused game
+                Move
+
+            Move ->
+                if kk == KeyPause then
+                    Pause
+                else
+                    model.gameField
+
+            _ ->
+                model.gameField
     else
         model.gameField
 
@@ -331,6 +363,7 @@ unjustify e =
     Maybe.withDefault { x = 0, y = 0 } e
 
 
+snakeGrower : Int -> Snake -> Snake
 snakeGrower growth snake =
     case compare growth 0 of
         GT ->
@@ -352,6 +385,10 @@ moveSnake model heading =
         moveSnake2 model heading
 
 
+moveSnake2 :
+    { a | growthFactor : Int, snake : List { x : Int, y : Int } }
+    -> Heading
+    -> List { x : Int, y : Int }
 moveSnake2 model heading =
     let
         snake =
@@ -398,9 +435,8 @@ view model =
     div []
         [ h1 [] [ text "Elm beginner's snake" ]
 
-        --, p [] [ text (toString model) ]
+        -- , p [] [ text (toString model) ]
         , p [] [ text "Use arrow keys to control the snake and space bar to pause" ]
-        , p [] [ text ("Going " ++ toString model.heading) ]
         , div [] [ gameField model ]
         , p []
             [ text ("Eaten " ++ toString model.eaten) ]
@@ -409,7 +445,7 @@ view model =
                 (if model.gameField == Collision then
                     "Game Over"
                  else if model.gameField == Pause then
-                    "Paused, press an arrow key to resume"
+                    "Paused, press any key to resume"
                  else
                     ""
                 )
@@ -476,7 +512,7 @@ gameField model =
                     [ fill "none"
                     , fillRule "evenodd"
                     , stroke "#fa4"
-                    , strokeWidth (toString (model.scale + 10))
+                    , strokeWidth (toString (model.scale + 5))
                     , strokeLinecap "round"
                     , strokeLinejoin "round"
                     , d (buildMHead model) --snake segments
@@ -486,6 +522,7 @@ gameField model =
         )
 
 
+nc : { a | scale : Int } -> Int -> String
 nc model i =
     toString (i * model.scale + model.scale // 2)
 
@@ -495,10 +532,12 @@ buildMcoords model =
     List.foldl (\v a -> a ++ buildOneCoord model v) "M " model.snake
 
 
+buildMHead : { a | scale : number, snake : List { b | x : number, y : number } } -> String
 buildMHead model =
     List.foldl (\v a -> a ++ buildOneCoord model v) "M " (List.take 2 model.snake)
 
 
+buildOneCoord : { a | scale : number } -> { b | x : number, y : number } -> String
 buildOneCoord model v =
     toString (v.x * model.scale) ++ "," ++ toString (v.y * model.scale) ++ " "
 
