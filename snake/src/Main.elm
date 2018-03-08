@@ -84,6 +84,13 @@ type GameField
     | Pause
 
 
+newFoodItems fis =
+    if fis == [] then
+        [ { x = 5, y = 5 }, { x = 7, y = 9 }, { x = 9, y = 12 } ]
+    else
+        fis
+
+
 init : ( Model, Cmd Msg )
 init =
     ( { heading = Right
@@ -93,7 +100,7 @@ init =
             [ { x = 6, y = 7 }
             , { x = 5, y = 7 }
             ]
-      , foodItems = [ { x = 5, y = 5 }, { x = 7, y = 9 }, { x = 9, y = 12 } ]
+      , foodItems = newFoodItems []
       , eaten = 0
       , width = 600
       , time = Nothing
@@ -239,7 +246,14 @@ cook model =
         { model
             | gameField = detectCollision model
             , growthFactor = model.growthFactor + 3
-            , foodItems = filter (\c -> not (foodUnderHead c model)) model.foodItems
+            , foodItems =
+                newFoodItems
+                    (filter
+                        (\c ->
+                            not (foodUnderHead c model)
+                        )
+                        model.foodItems
+                    )
             , debugData = toString ( "** eaten **", head model.snake, model.foodItems )
             , eaten = model.eaten + 1
         }
