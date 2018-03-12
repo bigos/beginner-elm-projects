@@ -84,13 +84,6 @@ type GameField
     | Pause
 
 
-newFoodItems fis =
-    if fis == [] then
-        [ { x = 5, y = 5 }, { x = 7, y = 9 }, { x = 9, y = 12 } ]
-    else
-        fis
-
-
 init : ( Model, Cmd Msg )
 init =
     ( { heading = Right
@@ -239,6 +232,14 @@ type Msg
     = NoOp
     | Tick Time
     | Keypress Keyboard.KeyCode
+    | NewFood
+
+
+newFoodItems fis =
+    if fis == [] then
+        [ { x = 5, y = 5 }, { x = 7, y = 9 }, { x = 9, y = 12 } ]
+    else
+        fis
 
 
 cook model =
@@ -267,27 +268,39 @@ cook model =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg rawModel =
-    let
-        model =
-            cook rawModel
-    in
     case msg of
         NoOp ->
-            ( model, Cmd.none )
+            ( rawModel, Cmd.none )
 
         Tick newTime ->
+            let
+                model =
+                    cook rawModel
+            in
             ( { model
                 | time = Just newTime
                 , gameField = updateGamefield False model (unjust model.lastKey)
                 , snake = moveSnake model model.heading
               }
-            , Cmd.none
+            , if length model.foodItems == 0 then
+                ( model
+                , Random.generate NewFood
+                    [ { x = Random.int 0 6
+                      , y = Random.int 0 6
+                      }
+                    ]
+                )
+              else
+                Cmd.none
             )
 
         Keypress key ->
             let
                 kk =
                     keyControl key
+
+                model =
+                    cook rawModel
             in
             ( { model
                 | lastKey = Just kk
@@ -295,8 +308,20 @@ update msg rawModel =
                 , gameField = updateGamefield True model kk
                 , snake = moveSnake model (heading model kk)
               }
-            , Cmd.none
+            , if length model.foodItems == 0 then
+                ( model
+                , Random.generate NewFood
+                    [ { x = Random.int 0 6
+                      , y = Random.int 0 6
+                      }
+                    ]
+                )
+              else
+                Cmd.none
             )
+
+        NewFood newCoords ->
+            Cmd.none
 
 
 updateGamefield keyEvent model kk =
