@@ -46,19 +46,19 @@ type alias Snake =
 
 
 type alias Model =
-    { heading : Heading
-    , scale : Int
-    , height : Int
-    , snake : List Coordinate
-    , foodItems : FoodItems
+    { debugData : String
     , eaten : Int
-    , width : Int
-    , time : Maybe Time
-    , lastKey : Maybe KeyControl
+    , foodItems : FoodItems
     , gameField : GameField
     , growthFactor : Int
+    , heading : Heading
+    , height : Int
+    , lastKey : Maybe KeyControl
+    , scale : Int
+    , snake : List Coordinate
     , tickInterval : Float
-    , debugData : String
+    , time : Maybe Time
+    , width : Int
     }
 
 
@@ -100,7 +100,7 @@ init =
       , time = Nothing
       , lastKey = Nothing
       , gameField = Move
-      , growthFactor = 5
+      , growthFactor = 1
       , tickInterval = 0.5
       , debugData = ""
       }
@@ -238,7 +238,7 @@ type Msg
 
 newFoodItems fis =
     if fis == [] then
-        [ { x = 5, y = 5 }, { x = 7, y = 9 }, { x = 9, y = 12 } ]
+        []
     else
         fis
 
@@ -267,9 +267,13 @@ cook model =
         }
 
 
-foodGenerator : Generator (List Coordinate)
-foodGenerator =
-    map2 Coordinate (int 0 6) (int 0 6)
+foodGenerator model =
+    list 3
+        (Random.map2
+            Coordinate
+            (int 1 ((model.width // model.scale) - 1))
+            (int 1 ((model.height // model.scale) - 1))
+        )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -290,7 +294,7 @@ update msg rawModel =
               }
             , if length model.foodItems == 0 then
                 Random.generate NewFood
-                    foodGenerator
+                    (foodGenerator model)
               else
                 Cmd.none
             )
@@ -313,7 +317,7 @@ update msg rawModel =
             )
 
         NewFood nnn ->
-            ( Model nnn
+            ( { rawModel | foodItems = nnn }
             , Cmd.none
             )
 
@@ -533,7 +537,7 @@ gameField model =
                     [ fill "none"
                     , fillRule "evenodd"
                     , stroke "#fa4"
-                    , strokeWidth (toString (model.scale - 1))
+                    , strokeWidth (toString (model.scale - 5))
                     , strokeLinecap "round"
                     , strokeLinejoin "round"
                     , d (buildMcoords model) --snake segments
@@ -545,7 +549,7 @@ gameField model =
                     [ fill "none"
                     , fillRule "evenodd"
                     , stroke "#fa4"
-                    , strokeWidth (toString (model.scale + 5))
+                    , strokeWidth (toString model.scale)
                     , strokeLinecap "round"
                     , strokeLinejoin "round"
                     , d (buildMHead model) --snake segments
