@@ -6,6 +6,7 @@ module Main exposing (..)
 import Html exposing (Html, div, h1, img, p, text)
 import Keyboard exposing (downs)
 import List exposing (..)
+import Random exposing (Generator, generate, int, list)
 import Svg exposing (path, rect, svg)
 import Svg.Attributes
     exposing
@@ -45,19 +46,19 @@ type alias Snake =
 
 
 type alias Model =
-    { heading : Heading
-    , scale : Int
-    , height : Int
-    , snake : List Coordinate
-    , foodItems : FoodItems
+    { debugData : String
     , eaten : Int
-    , width : Int
-    , time : Maybe Time
-    , lastKey : Maybe KeyControl
+    , foodItems : FoodItems
     , gameField : GameField
     , growthFactor : Int
+    , heading : Heading
+    , height : Int
+    , lastKey : Maybe KeyControl
+    , scale : Int
+    , snake : List Coordinate
     , tickInterval : Float
-    , debugData : String
+    , time : Maybe Time
+    , width : Int
     }
 
 
@@ -84,13 +85,6 @@ type GameField
     | Pause
 
 
-newFoodItems fis =
-    if fis == [] then
-        [ { x = 5, y = 5 }, { x = 7, y = 9 }, { x = 9, y = 12 } ]
-    else
-        fis
-
-
 init : ( Model, Cmd Msg )
 init =
     ( { heading = Right
@@ -100,13 +94,13 @@ init =
             [ { x = 6, y = 7 }
             , { x = 5, y = 7 }
             ]
-      , foodItems = newFoodItems []
+      , foodItems = []
       , eaten = 0
       , width = 600
       , time = Nothing
       , lastKey = Nothing
       , gameField = Move
-      , growthFactor = 5
+      , growthFactor = 1
       , tickInterval = 0.5
       , debugData = ""
       }
@@ -239,6 +233,7 @@ type Msg
     = NoOp
     | Tick Time
     | Keypress Keyboard.KeyCode
+    | NewFood FoodItems
 
 
 cook model =
@@ -247,13 +242,11 @@ cook model =
             | gameField = detectCollision model
             , growthFactor = model.growthFactor + 3
             , foodItems =
-                newFoodItems
-                    (filter
-                        (\c ->
-                            not (foodUnderHead c model)
-                        )
-                        model.foodItems
+                filter
+                    (\c ->
+                        not (foodUnderHead c model)
                     )
+                    model.foodItems
             , debugData = toString ( "** eaten **", head model.snake, model.foodItems )
             , eaten = model.eaten + 1
         }
@@ -265,29 +258,45 @@ cook model =
         }
 
 
+foodGenerator model =
+    list 3
+        (Random.map2
+            Coordinate
+            (int 1 ((model.width // model.scale) - 1))
+            (int 1 ((model.height // model.scale) - 1))
+        )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg rawModel =
-    let
-        model =
-            cook rawModel
-    in
     case msg of
         NoOp ->
-            ( model, Cmd.none )
+            ( rawModel, Cmd.none )
 
         Tick newTime ->
+            let
+                model =
+                    cook rawModel
+            in
             ( { model
                 | time = Just newTime
                 , gameField = updateGamefield False model (unjust model.lastKey)
                 , snake = moveSnake model model.heading
               }
-            , Cmd.none
+            , if length model.foodItems == 0 then
+                Random.generate NewFood
+                    (foodGenerator model)
+              else
+                Cmd.none
             )
 
         Keypress key ->
             let
                 kk =
                     keyControl key
+
+                model =
+                    cook rawModel
             in
             ( { model
                 | lastKey = Just kk
@@ -295,6 +304,11 @@ update msg rawModel =
                 , gameField = updateGamefield True model kk
                 , snake = moveSnake model (heading model kk)
               }
+            , Cmd.none
+            )
+
+        NewFood nnn ->
+            ( { rawModel | foodItems = nnn }
             , Cmd.none
             )
 
@@ -355,16 +369,30 @@ heading model kc =
             model.heading
 
         KeyLeft ->
-            Left
+            -- prevent snake biting itself when accidentally pressing the
+            -- opposite key
+            if model.heading == Right then
+                model.heading
+            else
+                Left
 
         KeyUp ->
-            Up
+            if model.heading == Down then
+                model.heading
+            else
+                Up
 
         KeyRight ->
-            Right
+            if model.heading == Left then
+                model.heading
+            else
+                Right
 
         KeyDown ->
-            Down
+            if model.heading == Up then
+                model.heading
+            else
+                Down
 
 
 butLast : List a -> List a
@@ -514,7 +542,7 @@ gameField model =
                     [ fill "none"
                     , fillRule "evenodd"
                     , stroke "#fa4"
-                    , strokeWidth (toString (model.scale - 1))
+                    , strokeWidth (toString (model.scale - 5))
                     , strokeLinecap "round"
                     , strokeLinejoin "round"
                     , d (buildMcoords model) --snake segments
@@ -526,7 +554,7 @@ gameField model =
                     [ fill "none"
                     , fillRule "evenodd"
                     , stroke "#fa4"
-                    , strokeWidth (toString (model.scale + 5))
+                    , strokeWidth (toString model.scale)
                     , strokeLinecap "round"
                     , strokeLinejoin "round"
                     , d (buildMHead model) --snake segments
