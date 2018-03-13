@@ -6,6 +6,7 @@ module Main exposing (..)
 import Html exposing (Html, div, h1, img, p, text)
 import Keyboard exposing (downs)
 import List exposing (..)
+import Random exposing (Generator, generate, int, list)
 import Svg exposing (path, rect, svg)
 import Svg.Attributes
     exposing
@@ -232,7 +233,7 @@ type Msg
     = NoOp
     | Tick Time
     | Keypress Keyboard.KeyCode
-    | NewFood
+    | NewFood FoodItems
 
 
 newFoodItems fis =
@@ -266,6 +267,11 @@ cook model =
         }
 
 
+foodGenerator : Generator (List Coordinate)
+foodGenerator =
+    map2 Coordinate (int 0 6) (int 0 6)
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg rawModel =
     case msg of
@@ -283,13 +289,8 @@ update msg rawModel =
                 , snake = moveSnake model model.heading
               }
             , if length model.foodItems == 0 then
-                ( model
-                , Random.generate NewFood
-                    [ { x = Random.int 0 6
-                      , y = Random.int 0 6
-                      }
-                    ]
-                )
+                Random.generate NewFood
+                    foodGenerator
               else
                 Cmd.none
             )
@@ -308,20 +309,13 @@ update msg rawModel =
                 , gameField = updateGamefield True model kk
                 , snake = moveSnake model (heading model kk)
               }
-            , if length model.foodItems == 0 then
-                ( model
-                , Random.generate NewFood
-                    [ { x = Random.int 0 6
-                      , y = Random.int 0 6
-                      }
-                    ]
-                )
-              else
-                Cmd.none
+            , Cmd.none
             )
 
-        NewFood newCoords ->
-            Cmd.none
+        NewFood nnn ->
+            ( Model nnn
+            , Cmd.none
+            )
 
 
 updateGamefield keyEvent model kk =
