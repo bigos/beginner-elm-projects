@@ -94,7 +94,7 @@ init =
             [ { x = 6, y = 7 }
             , { x = 5, y = 7 }
             ]
-      , foodItems = newFoodItems []
+      , foodItems = []
       , eaten = 0
       , width = 600
       , time = Nothing
@@ -236,26 +236,17 @@ type Msg
     | NewFood FoodItems
 
 
-newFoodItems fis =
-    if fis == [] then
-        []
-    else
-        fis
-
-
 cook model =
     if foodEaten model then
         { model
             | gameField = detectCollision model
             , growthFactor = model.growthFactor + 3
             , foodItems =
-                newFoodItems
-                    (filter
-                        (\c ->
-                            not (foodUnderHead c model)
-                        )
-                        model.foodItems
+                filter
+                    (\c ->
+                        not (foodUnderHead c model)
                     )
+                    model.foodItems
             , debugData = toString ( "** eaten **", head model.snake, model.foodItems )
             , eaten = model.eaten + 1
         }
@@ -378,16 +369,30 @@ heading model kc =
             model.heading
 
         KeyLeft ->
-            Left
+            -- prevent snake biting itself when accidentally pressing the
+            -- opposite key
+            if model.heading == Right then
+                model.heading
+            else
+                Left
 
         KeyUp ->
-            Up
+            if model.heading == Down then
+                model.heading
+            else
+                Up
 
         KeyRight ->
-            Right
+            if model.heading == Left then
+                model.heading
+            else
+                Right
 
         KeyDown ->
-            Down
+            if model.heading == Up then
+                model.heading
+            else
+                Down
 
 
 butLast : List a -> List a
