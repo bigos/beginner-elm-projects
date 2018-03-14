@@ -209,15 +209,6 @@ headHitWall model =
         >= gridHeight model
 
 
-detectCollision :
-    { a
-        | gameField : GameField
-        , height : Int
-        , scale : Int
-        , snake : List Coordinate
-        , width : Int
-    }
-    -> GameField
 detectCollision model =
     if headHitWall model || headBitSnake model then
         Collision
@@ -262,8 +253,8 @@ foodGenerator model =
     list 3
         (Random.map2
             Coordinate
-            (int 1 ((model.width // model.scale) - 1))
-            (int 1 ((model.height // model.scale) - 1))
+            (int 1 (gridWidth model - 1))
+            (int 1 (gridHeight model - 1))
         )
 
 
@@ -401,8 +392,8 @@ butLast list =
 
 
 unjustify : Maybe Coordinate -> Coordinate
-unjustify e =
-    Maybe.withDefault { x = 0, y = 0 } e
+unjustify =
+    Maybe.withDefault { x = 0, y = 0 }
 
 
 snakeGrower : Int -> Snake -> Snake
