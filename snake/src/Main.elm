@@ -50,7 +50,7 @@ type alias Model =
     , eaten : Int
     , foodItems : FoodItems
     , gameField : GameField
-    , growthFactor : Int
+    , snakeLength : Int
     , heading : Heading
     , height : Int
     , lastKey : Maybe KeyControl
@@ -100,7 +100,7 @@ init =
       , time = Nothing
       , lastKey = Nothing
       , gameField = Move
-      , growthFactor = 1
+      , snakeLength = 1
       , tickInterval = 0.5
       , debugData = ""
       }
@@ -108,14 +108,12 @@ init =
     )
 
 
-shrinkInt : Int -> Int
-shrinkInt n =
-    if n == 0 then
-        n
-    else if n > 0 then
+shrink : Int -> Int
+shrink n =
+    if (n - 1) > 0 then
         n - 1
     else
-        n + 1
+        0
 
 
 gridWidth : { a | scale : Int, width : Int } -> Int
@@ -231,7 +229,7 @@ cook model =
     if foodEaten model then
         { model
             | gameField = detectCollision model
-            , growthFactor = model.growthFactor + 3
+            , snakeLength = model.snakeLength + 3
             , foodItems =
                 filter
                     (\c ->
@@ -244,7 +242,7 @@ cook model =
     else
         { model
             | gameField = detectCollision model
-            , growthFactor = shrinkInt model.growthFactor
+            , snakeLength = shrink model.snakeLength
             , debugData = ""
         }
 
@@ -419,7 +417,7 @@ moveSnake model heading =
 
 
 moveSnake2 :
-    { a | growthFactor : Int, snake : List { x : Int, y : Int } }
+    { a | snakeLength : Int, snake : List { x : Int, y : Int } }
     -> Heading
     -> List { x : Int, y : Int }
 moveSnake2 model heading =
@@ -428,7 +426,7 @@ moveSnake2 model heading =
             model.snake
 
         growth =
-            model.growthFactor
+            model.snakeLength
 
         uhs =
             unjustify (head snake)
