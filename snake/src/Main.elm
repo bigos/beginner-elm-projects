@@ -50,7 +50,7 @@ type alias Model =
     , eaten : Int
     , foodItems : FoodItems
     , gameField : GameField
-    , growthFactor : Int
+    , snakeLength : Int
     , heading : Heading
     , height : Int
     , lastKey : Maybe KeyControl
@@ -108,14 +108,12 @@ init =
     )
 
 
-shrinkInt : Int -> Int
-shrinkInt n =
-    if n == 0 then
-        n
-    else if n > 0 then
+shrink : Int -> Int
+shrink n =
+    if (n - 1) > 0 then
         n - 1
     else
-        n + 1
+        0
 
 
 gridWidth : { a | scale : Int, width : Int } -> Int
@@ -209,15 +207,6 @@ headHitWall model =
                 >= gridHeight model
 
 
-detectCollision :
-    { a
-        | gameField : GameField
-        , height : Int
-        , scale : Int
-        , snake : List Coordinate
-        , width : Int
-    }
-    -> GameField
 detectCollision model =
     if headHitWall model || headBitSnake model then
         Collision
@@ -240,7 +229,7 @@ cook model =
     if foodEaten model then
         { model
             | gameField = detectCollision model
-            , growthFactor = model.growthFactor + 3
+            , snakeLength = model.snakeLength + 3
             , foodItems =
                 filter
                     (\c ->
@@ -253,7 +242,7 @@ cook model =
     else
         { model
             | gameField = detectCollision model
-            , growthFactor = shrinkInt model.growthFactor
+            , snakeLength = shrink model.snakeLength
             , debugData = ""
         }
 
@@ -262,8 +251,8 @@ foodGenerator model =
     list 3
         (Random.map2
             Coordinate
-            (int 1 ((model.width // model.scale) - 1))
-            (int 1 ((model.height // model.scale) - 1))
+            (int 1 (gridWidth model - 1))
+            (int 1 (gridHeight model - 1))
         )
 
 
@@ -401,8 +390,8 @@ butLast list =
 
 
 unjustify : Maybe Coordinate -> Coordinate
-unjustify e =
-    Maybe.withDefault { x = 0, y = 0 } e
+unjustify =
+    Maybe.withDefault { x = 0, y = 0 }
 
 
 snakeGrower : Int -> Snake -> Snake
@@ -428,7 +417,7 @@ moveSnake model heading =
 
 
 moveSnake2 :
-    { a | growthFactor : Int, snake : List { x : Int, y : Int } }
+    { a | snakeLength : Int, snake : List { x : Int, y : Int } }
     -> Heading
     -> List { x : Int, y : Int }
 moveSnake2 model heading =
@@ -437,7 +426,7 @@ moveSnake2 model heading =
             model.snake
 
         growth =
-            model.growthFactor
+            model.snakeLength
 
         uhs =
             unjustify (head snake)
