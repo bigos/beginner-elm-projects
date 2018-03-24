@@ -100,7 +100,7 @@ init =
       , time = Nothing
       , lastKey = Nothing
       , gameField = Pause
-      , growthFactor = 1
+      , snakeLength = 1
       , tickInterval = 0.5
       , debugData = ""
       }
