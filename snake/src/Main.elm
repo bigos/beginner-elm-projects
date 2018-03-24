@@ -99,7 +99,7 @@ init =
       , width = 600
       , time = Nothing
       , lastKey = Nothing
-      , gameField = Move
+      , gameField = Pause
       , growthFactor = 1
       , tickInterval = 0.5
       , debugData = ""
@@ -153,7 +153,7 @@ foodUnderHead c model =
         y =
             (unjustify (head model.snake)).y
     in
-    c.x == x && c.y == y
+        c.x == x && c.y == y
 
 
 foodEaten :
@@ -167,9 +167,9 @@ foodEaten model =
         y =
             (unjustify (head model.snake)).y
     in
-    member
-        True
-        (map (\c -> c.x == x && c.y == y) model.foodItems)
+        member
+            True
+            (map (\c -> c.x == x && c.y == y) model.foodItems)
 
 
 headBitSnake : { a | snake : List Coordinate } -> Bool
@@ -181,7 +181,7 @@ headBitSnake model =
         y =
             (unjustify (head model.snake)).y
     in
-    member True (map (\c -> c.x == x && c.y == y) (drop 1 model.snake))
+        member True (map (\c -> c.x == x && c.y == y) (drop 1 model.snake))
 
 
 headHitWall :
@@ -192,21 +192,21 @@ headHitWall model =
         h =
             head model.snake
     in
-    let
-        x =
-            (unjustify h).x
+        let
+            x =
+                (unjustify h).x
 
-        y =
-            (unjustify h).y
-    in
-    x
-        <= 0
-        || y
-        <= 0
-        || x
-        >= gridWidth model
-        || y
-        >= gridHeight model
+            y =
+                (unjustify h).y
+        in
+            x
+                <= 0
+                || y
+                <= 0
+                || x
+                >= gridWidth model
+                || y
+                >= gridHeight model
 
 
 detectCollision :
@@ -278,17 +278,17 @@ update msg rawModel =
                 model =
                     cook rawModel
             in
-            ( { model
-                | time = Just newTime
-                , gameField = updateGamefield False model (unjust model.lastKey)
-                , snake = moveSnake model model.heading
-              }
-            , if length model.foodItems == 0 then
-                Random.generate NewFood
-                    (foodGenerator model)
-              else
-                Cmd.none
-            )
+                ( { model
+                    | time = Just newTime
+                    , gameField = updateGamefield False model (unjust model.lastKey)
+                    , snake = moveSnake model model.heading
+                  }
+                , if length model.foodItems == 0 then
+                    Random.generate NewFood
+                        (foodGenerator model)
+                  else
+                    Cmd.none
+                )
 
         Keypress key ->
             let
@@ -298,14 +298,14 @@ update msg rawModel =
                 model =
                     cook rawModel
             in
-            ( { model
-                | lastKey = Just kk
-                , heading = heading model kk
-                , gameField = updateGamefield True model kk
-                , snake = moveSnake model (heading model kk)
-              }
-            , Cmd.none
-            )
+                ( { model
+                    | lastKey = Just kk
+                    , heading = heading model kk
+                    , gameField = updateGamefield True model kk
+                    , snake = moveSnake model (heading model kk)
+                  }
+                , Cmd.none
+                )
 
         NewFood nnn ->
             ( { rawModel | foodItems = nnn }
@@ -442,30 +442,30 @@ moveSnake2 model heading =
         uhs =
             unjustify (head snake)
     in
-    case heading of
-        Left ->
-            { x = uhs.x - 1
-            , y = uhs.y
-            }
-                :: snakeGrower growth snake
+        case heading of
+            Left ->
+                { x = uhs.x - 1
+                , y = uhs.y
+                }
+                    :: snakeGrower growth snake
 
-        Up ->
-            { x = uhs.x
-            , y = uhs.y - 1
-            }
-                :: snakeGrower growth snake
+            Up ->
+                { x = uhs.x
+                , y = uhs.y - 1
+                }
+                    :: snakeGrower growth snake
 
-        Right ->
-            { x = uhs.x + 1
-            , y = uhs.y
-            }
-                :: snakeGrower growth snake
+            Right ->
+                { x = uhs.x + 1
+                , y = uhs.y
+                }
+                    :: snakeGrower growth snake
 
-        Down ->
-            { x = uhs.x
-            , y = uhs.y + 1
-            }
-                :: snakeGrower growth snake
+            Down ->
+                { x = uhs.x
+                , y = uhs.y + 1
+                }
+                    :: snakeGrower growth snake
 
 
 
@@ -487,7 +487,7 @@ view model =
                 (if model.gameField == Collision then
                     "Game Over"
                  else if model.gameField == Pause then
-                    "Paused, press any key to resume"
+                    "Paused, press any key to play"
                  else
                     ""
                 )
