@@ -12,4 +12,4 @@ This is a short overview of my projects.
 
  This is a simple snake game. Moving the snake, pausing and collision detection
 works. You can control the snake with arrow keys and pause with Space bar. The
-snake can grow, but eating food and growing upon eating food is not implemented.
+snake can grow.
