@@ -110,25 +110,20 @@ init =
 
 shrink : Int -> Int
 shrink n =
-    if (n - 1) > 0 then
+    if n >= 1 then
         n - 1
     else
         0
 
 
-gridWidth : { a | scale : Int, width : Int } -> Int
 gridWidth model =
     model.width // model.scale
 
 
-gridHeight : { a | height : Int, scale : Int } -> Int
 gridHeight model =
     model.height // model.scale
 
 
-gridCoordinates :
-    { a | height : Int, scale : Int, width : Int }
-    -> List (List ( Int, Int ))
 gridCoordinates model =
     map
         (\x ->
@@ -139,10 +134,6 @@ gridCoordinates model =
         (range 0 (gridWidth model - 1))
 
 
-foodUnderHead :
-    { a | x : Int, y : Int }
-    -> { b | snake : List Coordinate }
-    -> Bool
 foodUnderHead c model =
     let
         x =
@@ -151,12 +142,9 @@ foodUnderHead c model =
         y =
             (unjustify (head model.snake)).y
     in
-        c.x == x && c.y == y
+    c.x == x && c.y == y
 
 
-foodEaten :
-    { b | foodItems : List { a | x : Int, y : Int }, snake : List Coordinate }
-    -> Bool
 foodEaten model =
     let
         x =
@@ -165,12 +153,11 @@ foodEaten model =
         y =
             (unjustify (head model.snake)).y
     in
-        member
-            True
-            (map (\c -> c.x == x && c.y == y) model.foodItems)
+    member
+        True
+        (map (\c -> c.x == x && c.y == y) model.foodItems)
 
 
-headBitSnake : { a | snake : List Coordinate } -> Bool
 headBitSnake model =
     let
         x =
@@ -179,32 +166,29 @@ headBitSnake model =
         y =
             (unjustify (head model.snake)).y
     in
-        member True (map (\c -> c.x == x && c.y == y) (drop 1 model.snake))
+    member True (map (\c -> c.x == x && c.y == y) (drop 1 model.snake))
 
 
-headHitWall :
-    { a | height : Int, scale : Int, snake : List Coordinate, width : Int }
-    -> Bool
 headHitWall model =
     let
         h =
             head model.snake
     in
-        let
-            x =
-                (unjustify h).x
+    let
+        x =
+            (unjustify h).x
 
-            y =
-                (unjustify h).y
-        in
-            x
-                <= 0
-                || y
-                <= 0
-                || x
-                >= gridWidth model
-                || y
-                >= gridHeight model
+        y =
+            (unjustify h).y
+    in
+    x
+        <= 0
+        || y
+        <= 0
+        || x
+        >= gridWidth model
+        || y
+        >= gridHeight model
 
 
 detectCollision model =
@@ -267,17 +251,17 @@ update msg rawModel =
                 model =
                     cook rawModel
             in
-                ( { model
-                    | time = Just newTime
-                    , gameField = updateGamefield False model (unjust model.lastKey)
-                    , snake = moveSnake model model.heading
-                  }
-                , if length model.foodItems == 0 then
-                    Random.generate NewFood
-                        (foodGenerator model)
-                  else
-                    Cmd.none
-                )
+            ( { model
+                | time = Just newTime
+                , gameField = updateGamefield False model (unjust model.lastKey)
+                , snake = moveSnake model model.heading
+              }
+            , if length model.foodItems == 0 then
+                Random.generate NewFood
+                    (foodGenerator model)
+              else
+                Cmd.none
+            )
 
         Keypress key ->
             let
@@ -287,14 +271,14 @@ update msg rawModel =
                 model =
                     cook rawModel
             in
-                ( { model
-                    | lastKey = Just kk
-                    , heading = heading model kk
-                    , gameField = updateGamefield True model kk
-                    , snake = moveSnake model (heading model kk)
-                  }
-                , Cmd.none
-                )
+            ( { model
+                | lastKey = Just kk
+                , heading = heading model kk
+                , gameField = updateGamefield True model kk
+                , snake = moveSnake model (heading model kk)
+              }
+            , Cmd.none
+            )
 
         NewFood nnn ->
             ( { rawModel | foodItems = nnn }
@@ -416,10 +400,6 @@ moveSnake model heading =
         moveSnake2 model heading
 
 
-moveSnake2 :
-    { a | snakeLength : Int, snake : List { x : Int, y : Int } }
-    -> Heading
-    -> List { x : Int, y : Int }
 moveSnake2 model heading =
     let
         snake =
@@ -431,30 +411,30 @@ moveSnake2 model heading =
         uhs =
             unjustify (head snake)
     in
-        case heading of
-            Left ->
-                { x = uhs.x - 1
-                , y = uhs.y
-                }
-                    :: snakeGrower growth snake
+    case heading of
+        Left ->
+            { x = uhs.x - 1
+            , y = uhs.y
+            }
+                :: snakeGrower growth snake
 
-            Up ->
-                { x = uhs.x
-                , y = uhs.y - 1
-                }
-                    :: snakeGrower growth snake
+        Up ->
+            { x = uhs.x
+            , y = uhs.y - 1
+            }
+                :: snakeGrower growth snake
 
-            Right ->
-                { x = uhs.x + 1
-                , y = uhs.y
-                }
-                    :: snakeGrower growth snake
+        Right ->
+            { x = uhs.x + 1
+            , y = uhs.y
+            }
+                :: snakeGrower growth snake
 
-            Down ->
-                { x = uhs.x
-                , y = uhs.y + 1
-                }
-                    :: snakeGrower growth snake
+        Down ->
+            { x = uhs.x
+            , y = uhs.y + 1
+            }
+                :: snakeGrower growth snake
 
 
 
@@ -553,7 +533,6 @@ gameField model =
         )
 
 
-nc : { a | scale : Int } -> Int -> String
 nc model i =
     toString (i * model.scale + model.scale // 2)
 
